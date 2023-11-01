@@ -82,6 +82,10 @@ Resources:
           Tags:
           - Key: Name
             Value: !Join ['-', [!Ref Env, !Ref ResourceName, 'ec2-client']]
+        UserData: 
+          Fn::Base64: |
+            #!/bin/bash
+            echo 'proxy = "http://10.0.0.x:3128"' >> ~/.curlrc
   # ------------------------------ #
   # Proxy EC2Instance
   # ------------------------------ #
@@ -121,12 +125,6 @@ Resources:
       GroupName: !Join ['-', [!Ref Env, !Ref ResourceName, 'sg-for-ec2']]
       GroupDescription: Security group for WebApServerEC2
       VpcId: !ImportValue Vpc
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-          Description: Allow all ssh traffic
       Tags:
         - Key: Name
           Value: !Join ['-', [!Ref Env, !Ref ResourceName, 'sg-for-ec2']]
@@ -146,22 +144,11 @@ Resources:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
-          CidrIp: 192.168.0.0/24
+          CidrIp: 0.0.0.0/0
           Description: Allow https traffic
   # ------------------------------ #
   # VPC Endpoint
   # ------------------------------ #
-  EC2MessageEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2messages"
-      VpcEndpointType: Interface
-      PrivateDnsEnabled: true
-      VpcId: !ImportValue Vpc
-      SubnetIds:
-        - !Ref PrivateSubnetId
-      SecurityGroupIds:
-        - !Ref SsmEndpointSecurityGroup
   EC2Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -173,6 +160,23 @@ Resources:
         - !Ref PrivateSubnetId
       SecurityGroupIds:
         - !Ref SsmEndpointSecurityGroup
+      # Tags:
+      # - Key: Name
+      #   Value: !Join ['-', [!Ref Env, !Ref ResourceName, 'endpoint-ec2']]
+  EC2MessageEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2messages"
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      VpcId: !ImportValue Vpc
+      SubnetIds:
+        - !Ref PrivateSubnetId
+      SecurityGroupIds:
+        - !Ref SsmEndpointSecurityGroup
+      # Tags:
+      # - Key: Name
+      #   Value: !Join ['-', [!Ref Env, !Ref ResourceName, 'endpoint-ec2messages']]
   SsmEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -184,6 +188,9 @@ Resources:
         - !Ref PrivateSubnetId
       SecurityGroupIds:
         - !Ref SsmEndpointSecurityGroup
+      # Tags:
+      # - Key: Name
+      #   Value: !Join ['-', [!Ref Env, !Ref ResourceName, 'endpoint-ssm']]
   SsmAgentEndpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -195,6 +202,9 @@ Resources:
         - !Ref PrivateSubnetId
       SecurityGroupIds:
         - !Ref SsmEndpointSecurityGroup
+      # Tags:
+      # - Key: Name
+      #   Value: !Join ['-', [!Ref Env, !Ref ResourceName, 'endpoint-ssmagent']]
   S3Endpoint:
     Type: AWS::EC2::VPCEndpoint
     Properties:
@@ -202,6 +212,9 @@ Resources:
       VpcId: !ImportValue Vpc
       RouteTableIds:
         - !ImportValue PrivateRouteTable
+      # Tags:
+      # - Key: Name
+      #   Value: !Join ['-', [!Ref Env, !Ref ResourceName, 'endpoint-s3']]
   # ------------------------------ #
   # EC2Instance IAMrole
   # ------------------------------ #
